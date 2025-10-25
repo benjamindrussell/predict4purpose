@@ -119,6 +119,7 @@ contract SpatialMarket is ReentrancyGuard {
   address public immutable resolver;
   address public immutable treasury;
   uint256 public immutable feeBps; // protocol fee on claims, out of 10_000
+  uint256 public constant WIN_RADIUS_METERS = 5_000; // fixed 5km radius
 
   uint256 public tradingOpen;
   uint256 public tradingClose;
@@ -137,10 +138,12 @@ contract SpatialMarket is ReentrancyGuard {
   bytes32 public resultMerkleRoot;
   uint256 public payoutDenominator; // common denominator for all ids
   uint256 public resolvedAt; // timestamp when last root set
+  int32 public resolvedLatE6; // final resolution latitude (microdegrees)
+  int32 public resolvedLonE6; // final resolution longitude (microdegrees)
 
   // ---------- Events ----------
   event Stake(address indexed staker, uint256 indexed id, int32 latE6, int32 lonE6, uint256 amount);
-  event Resolve(bytes32 merkleRoot, uint256 payoutDenominator);
+  event Resolve(bytes32 merkleRoot, uint256 payoutDenominator, int32 latE6, int32 lonE6);
 
   // ---------- Errors ----------
   error NotOwner();
@@ -199,14 +202,19 @@ contract SpatialMarket is ReentrancyGuard {
   }
 
   // ---------- Resolution ----------
-  function setResolution(bytes32 merkleRoot, uint256 _payoutDenominator) external {
+  function setResolution(bytes32 merkleRoot, uint256 _payoutDenominator, int32 latE6, int32 lonE6) external {
     if (msg.sender != resolver) revert NotResolver();
     require(tradingClose != 0 && block.timestamp >= tradingClose, "NOT_CLOSED");
     require(_payoutDenominator > 0, "DEN");
+    // basic bounds checks for coordinates
+    require(latE6 >= -90_000_000 && latE6 <= 90_000_000, "LAT");
+    require(lonE6 >= -180_000_000 && lonE6 <= 180_000_000, "LON");
     resultMerkleRoot = merkleRoot;
     payoutDenominator = _payoutDenominator;
     resolvedAt = block.timestamp;
-    emit Resolve(merkleRoot, _payoutDenominator);
+    resolvedLatE6 = latE6;
+    resolvedLonE6 = lonE6;
+    emit Resolve(merkleRoot, _payoutDenominator, latE6, lonE6);
   }
 
   function claim(uint256 id, uint256 payoutNumerator, bytes32[] calldata proof) public nonReentrant returns (uint256 payoutWei) {

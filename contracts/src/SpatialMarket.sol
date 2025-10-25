@@ -260,7 +260,7 @@ contract SpatialMarket is ReentrancyGuard {
     if (msg.sender != resolver) revert NotResolver();
     require(tradingClose == 0, "ALREADY_CLOSED");
     tradingClose = block.timestamp;
-    disputeEnd = tradingClose + 7 days;
+    disputeEnd = tradingClose + 10 seconds;
   }
 
   // ---------- Cell math ----------

@@ -11,15 +11,18 @@
   "dependencies": {
     "@coinbase/onchainkit": "latest",
     "@tanstack/react-query": "^5.81.5",
+    "leaflet": "^1.9.4",
     "next": "15.3.4",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
+    "react-leaflet": "^5.0.0",
     "viem": "^2.31.6",
     "wagmi": "^2.16.3"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",
     "@next/eslint-plugin-next": "^15.3.4",
+    "@types/leaflet": "^1.9.21",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",

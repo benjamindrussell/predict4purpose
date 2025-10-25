@@ -6,16 +6,25 @@
 
 .headerWrapper {
   display: flex;
-  justify-content: flex-end;
-  padding: 1rem;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.5rem 1rem;
+}
+
+.siteTitle {
+  font-weight: 800;
+  color: var(--blue);
+  font-size: 2rem;
+  line-height: 1;
 }
 
 .content {
   display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding-bottom: 5vh;
+  flex-direction: row;
+  align-items: stretch;
+  justify-content: stretch;
+  gap: 1rem;
+  padding: 0.5rem 1rem 1rem;
 }
 
 .title {
@@ -36,4 +45,28 @@
 
 .components a:hover {
   text-decoration: underline;
+}
+
+.panel {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 60vh;
+}
+
+.mapPanel {
+  flex: 2;
+  border: 1px solid var(--gray-15);
+  border-radius: 8px;
+  overflow: hidden;
+  /* Create a new stacking context so Leaflet panes don't overlay modals */
+  position: relative;
+  isolation: isolate;
+}
+
+.formPanel {
+  flex: 1;
+  border: 1px solid var(--gray-15);
+  border-radius: 8px;
+  padding: 1rem;
 }

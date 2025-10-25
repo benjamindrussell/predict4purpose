@@ -1,61 +1,46 @@
 "use client";
-import Image from "next/image";
 import styles from "./page.module.css";
 import { Wallet } from "@coinbase/onchainkit/wallet";
+import dynamic from "next/dynamic";
+import { useMemo, useState } from "react";
+
+const MapPicker = dynamic(() => import("./components/MapPicker"), {
+  ssr: false,
+});
+const StakeForm = dynamic(() => import("./components/StakeForm"), {
+  ssr: false,
+});
 
 export default function Home() {
+  const [position, setPosition] = useState<{ lat: number; lng: number } | null>(
+    null
+  );
+  const [amount, setAmount] = useState<string>("");
+  const radiusMeters = useMemo(() => {
+    const env = process.env.NEXT_PUBLIC_RADIUS_METERS;
+    const parsed = env ? Number(env) : NaN;
+    return Number.isFinite(parsed) && parsed > 0 ? parsed : 5000;
+  }, []);
+
   return (
     <div className={styles.container}>
       <header className={styles.headerWrapper}>
+        <div className={styles.siteTitle}>Predict4Purpose</div>
         <Wallet />
       </header>
 
       <div className={styles.content}>
-        <Image
-          priority
-          src="/sphere.svg"
-          alt="Sphere"
-          width={200}
-          height={200}
-        />
-        <h1 className={styles.title}>OnchainKit</h1>
-
-        <p>
-          Get started by editing <code>app/page.tsx</code>
-        </p>
-
-        <h2 className={styles.componentsTitle}>Explore Components</h2>
-
-        <ul className={styles.components}>
-          {[
-            {
-              name: "Transaction",
-              url: "https://docs.base.org/onchainkit/transaction/transaction",
-            },
-            {
-              name: "Swap",
-              url: "https://docs.base.org/onchainkit/swap/swap",
-            },
-            {
-              name: "Checkout",
-              url: "https://docs.base.org/onchainkit/checkout/checkout",
-            },
-            {
-              name: "Wallet",
-              url: "https://docs.base.org/onchainkit/wallet/wallet",
-            },
-            {
-              name: "Identity",
-              url: "https://docs.base.org/onchainkit/identity/identity",
-            },
-          ].map((component) => (
-            <li key={component.name}>
-              <a target="_blank" rel="noreferrer" href={component.url}>
-                {component.name}
-              </a>
-            </li>
-          ))}
-        </ul>
+        <div className={`${styles.panel} ${styles.mapPanel}`}>
+          <MapPicker value={position} onChange={setPosition} radiusMeters={radiusMeters} />
+        </div>
+        <div className={`${styles.panel} ${styles.formPanel}`}>
+          <StakeForm
+            amount={amount}
+            onAmountChange={setAmount}
+            radiusMeters={radiusMeters}
+            position={position}
+          />
+        </div>
       </div>
     </div>
   );

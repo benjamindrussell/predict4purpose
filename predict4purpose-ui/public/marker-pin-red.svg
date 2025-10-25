@@ -1,0 +1,18 @@
+<svg width="25" height="41" viewBox="0 0 25 41" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <filter id="shadow" x="-50%" y="-50%" width="200%" height="200%">
+      <feOffset dy="1"/>
+      <feGaussianBlur stdDeviation="1.2" result="blur"/>
+      <feColorMatrix type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 .25 0"/>
+      <feBlend in2="SourceGraphic" mode="normal"/>
+    </filter>
+  </defs>
+  <g fill="none" fill-rule="evenodd">
+    <!-- Pin shape -->
+    <path filter="url(#shadow)" d="M12.5 0C5.596 0 0 5.596 0 12.5 0 21.25 12.5 41 12.5 41S25 21.25 25 12.5C25 5.596 19.404 0 12.5 0z" fill="#D7263D"/>
+    <!-- Inner white circle -->
+    <circle cx="12.5" cy="12.5" r="5.5" fill="#FFF"/>
+  </g>
+</svg>
+
+

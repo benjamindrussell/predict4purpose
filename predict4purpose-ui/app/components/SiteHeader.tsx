@@ -1,7 +1,7 @@
 "use client";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Wallet, ConnectWallet } from "@coinbase/onchainkit/wallet";
+import { Wallet, ConnectWallet, WalletDropdown, WalletDropdownDisconnect } from "@coinbase/onchainkit/wallet";
 import { Avatar, Name } from "@coinbase/onchainkit/identity";
 
 export default function SiteHeader() {
@@ -30,7 +30,7 @@ export default function SiteHeader() {
       position: "sticky",
       top: 0,
       background: "var(--background)",
-      zIndex: 10,
+      zIndex: 2000,
     }}>
       <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
         <div style={{ fontWeight: 800, color: "var(--blue)", fontSize: "1.5rem", lineHeight: 1 }}>
@@ -47,6 +47,9 @@ export default function SiteHeader() {
           <Avatar className="h-6 w-6" />
           <Name />
         </ConnectWallet>
+        <WalletDropdown>
+          <WalletDropdownDisconnect />
+        </WalletDropdown>
       </Wallet>
     </header>
   );

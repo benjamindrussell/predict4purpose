@@ -1,6 +1,7 @@
 "use client";
 import dynamic from "next/dynamic";
 import { useMemo, useState } from "react";
+import ResolvePanel from "@/app/components/ResolvePanel";
 
 const MapPicker = dynamic(() => import("@/app/components/MapPicker"), { ssr: false });
 
@@ -22,7 +23,7 @@ export default function HeatmapPage() {
     <div style={{ display: "grid", gap: 12 }}>
       <h1 style={{ fontSize: 24, fontWeight: 800 }}>Prediction heatmap</h1>
       <div style={{ border: "1px solid var(--gray-15)", borderRadius: 8, overflow: "hidden" }}>
-        <div style={{ height: "70vh", position: "relative" }}>
+        <div style={{ height: "70vh", position: "relative", isolation: "isolate" }}>
           {/* Reuse map container; overlay circles for intensity */}
           <MapPicker value={center} onChange={() => {}} radiusMeters={radiusMeters} />
           {/* Overlay rendered via CSS pointer-events to avoid capturing clicks */}
@@ -32,6 +33,7 @@ export default function HeatmapPage() {
       <div style={{ color: "var(--gray-60)", fontSize: 14 }}>
         Demo heatmap uses synthetic hotspots. For the hackathon, this is cosmetic.
       </div>
+      <ResolvePanel />
     </div>
   );
 }

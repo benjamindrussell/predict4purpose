@@ -9,7 +9,7 @@ import { createPublicClient, http } from "viem";
 import { baseSepolia } from "viem/chains";
 import { spatialMarketAbi } from "@/app/lib/abi/SpatialMarket";
 
-type ChainPosition = { id: bigint; latE6: number; lonE6: number; source?: "real" | "fake" };
+type ChainPosition = { id: bigint; latE6: number; lonE6: number; source?: "real" | "fake"; marketSlug?: string };
 
 function resolveImageUrl(img: unknown): string {
   if (typeof img === "string") return img;
@@ -38,20 +38,38 @@ export default function PositionsMapPage() {
   const marketAddress = process.env.NEXT_PUBLIC_MARKET_ADDRESS as `0x${string}` | undefined;
   const client = useMemo(() => createPublicClient({ chain: baseSepolia, transport: http(rpcUrl) }), [rpcUrl]);
 
-  const explicitIcon = useMemo(
-    () =>
-      L.icon({
-        iconRetinaUrl: "/marker-pin-red.svg",
-        iconUrl: "/marker-pin-red.svg",
+  // Market color mapping (match Markets page)
+  const marketColors: Record<string, string> = useMemo(() => ({
+    wildfires: "#ef4444",
+    floods: "#3b82f6",
+    earthquakes: "#f59e0b",
+    drought: "#10b981",
+    hurricanes: "#8b5cf6",
+  }), []);
+
+  // Cache generated icons by color
+  const iconCache = useMemo(() => new Map<string, L.Icon>(), []);
+  const getColorIcon = useMemo(() => {
+    return (color: string) => {
+      const key = color.toLowerCase();
+      const cached = iconCache.get(key);
+      if (cached) return cached;
+      const svg = `<?xml version="1.0" encoding="UTF-8"?><svg width="25" height="41" viewBox="0 0 25 41" xmlns="http://www.w3.org/2000/svg"><path d="M12.5 0C5.596 0 0 5.596 0 12.5c0 9.375 12.5 28.5 12.5 28.5S25 21.875 25 12.5C25 5.596 19.404 0 12.5 0zm0 18.75a6.25 6.25 0 1 1 0-12.5 6.25 6.25 0 0 1 0 12.5z" fill="${color}"/></svg>`;
+      const url = `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`;
+      const icon = L.icon({
+        iconRetinaUrl: url,
+        iconUrl: url,
         shadowUrl: resolveImageUrl(markerShadow),
         iconSize: [25, 41],
         iconAnchor: [12, 41],
         popupAnchor: [1, -34],
         tooltipAnchor: [16, -28],
         shadowSize: [41, 41],
-      }),
-    []
-  );
+      });
+      iconCache.set(key, icon);
+      return icon;
+    };
+  }, [iconCache]);
 
   useEffect(() => {
     let cancelled = false;
@@ -86,14 +104,13 @@ export default function PositionsMapPage() {
             latLonById.set(id, { latE6: Number(lg.args.latE6), lonE6: Number(lg.args.lonE6) });
           }
         }
-        const realPositions: ChainPosition[] = Array.from(latLonById.entries()).map(([id, { latE6, lonE6 }]) => ({ id, latE6, lonE6, source: "real" }));
+        const realPositions: ChainPosition[] = Array.from(latLonById.entries()).map(([id, { latE6, lonE6 }]) => ({ id, latE6, lonE6, source: "real", marketSlug: "wildfires" }));
 
         const demoPositions: ChainPosition[] = [
-          { id: BigInt(900001), latE6: 34052200, lonE6: -118243700, source: "fake" },
-          { id: BigInt(900002), latE6: 29760400, lonE6: -95369800, source: "fake" },
-          { id: BigInt(900003), latE6: 33448400, lonE6: -112074000, source: "fake" },
-          { id: BigInt(900004), latE6: 25761700, lonE6: -80191800, source: "fake" },
-          { id: BigInt(900005), latE6: 40712600, lonE6: -74006000, source: "fake" },
+          { id: BigInt(900002), latE6: 29760400, lonE6: -95369800, source: "fake", marketSlug: "floods" },
+          { id: BigInt(900003), latE6: 33448400, lonE6: -112074000, source: "fake", marketSlug: "earthquakes" },
+          { id: BigInt(900004), latE6: 25761700, lonE6: -80191800, source: "fake", marketSlug: "hurricanes" },
+          { id: BigInt(900005), latE6: 40712600, lonE6: -74006000, source: "fake", marketSlug: "drought" },
         ];
 
         if (!cancelled) setPositions([...realPositions, ...demoPositions]);
@@ -121,9 +138,16 @@ export default function PositionsMapPage() {
               attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
               url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
             />
-            {positions.map((p) => (
-              <Marker key={p.id.toString() + p.source} position={[p.latE6 / 1_000_000, p.lonE6 / 1_000_000]} icon={explicitIcon} />
-            ))}
+            {positions.map((p) => {
+              const color = (p.marketSlug && marketColors[p.marketSlug]) || "#432DD7";
+              const icon = getColorIcon(color);
+              return (
+                <Marker key={p.id.toString() + (p.marketSlug || p.source || "")}
+                        position={[p.latE6 / 1_000_000, p.lonE6 / 1_000_000]}
+                        icon={icon}
+                />
+              );
+            })}
           </MapContainer>
         </div>
       </div>

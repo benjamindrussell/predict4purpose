@@ -218,7 +218,6 @@ contract SpatialMarket is ReentrancyGuard {
   }
 
   function claim(uint256 id, uint256 payoutNumerator, bytes32[] calldata proof) public nonReentrant returns (uint256 payoutWei) {
-    require(disputeEnd != 0 && block.timestamp >= disputeEnd, "DISPUTE");
     bytes32 root = resultMerkleRoot;
     require(root != bytes32(0) && payoutDenominator > 0, "NO_RES");
 
@@ -250,7 +249,7 @@ contract SpatialMarket is ReentrancyGuard {
   function skim(address to) external {
     if (msg.sender != owner) revert NotOwner();
     // Skim any unallocated ETH (e.g., rounding dust) after dispute.
-    require(disputeEnd != 0 && block.timestamp >= disputeEnd, "DISPUTE");
+    require(resultMerkleRoot != bytes32(0) && payoutDenominator > 0, "NO_RES");
     uint256 bal = address(this).balance;
     if (bal > 0) SafeTransferLib.safeTransferETH(to, bal);
   }
@@ -260,7 +259,7 @@ contract SpatialMarket is ReentrancyGuard {
     if (msg.sender != resolver) revert NotResolver();
     require(tradingClose == 0, "ALREADY_CLOSED");
     tradingClose = block.timestamp;
-    disputeEnd = tradingClose + 10 seconds;
+    disputeEnd = 0; // dispute window removed for hackathon
   }
 
   // ---------- Cell math ----------

@@ -27,9 +27,9 @@ export default function ClaimForm() {
   const deployBlockStr = process.env.NEXT_PUBLIC_MARKET_DEPLOY_BLOCK;
   const fromBlock = useMemo(() => {
     try {
-      return deployBlockStr ? BigInt(deployBlockStr) : 0n;
+      return deployBlockStr ? BigInt(deployBlockStr) : BigInt(0);
     } catch {
-      return 0n;
+      return BigInt(0);
     }
   }, [deployBlockStr]);
 
@@ -49,12 +49,12 @@ export default function ClaimForm() {
     // Find user's staked ids from logs
     // Fetch logs in chunks to respect provider max range limits
     const currentBlock = await client.getBlockNumber();
-    const maxRange = 100_000n;
-    const start = fromBlock && fromBlock > 0n ? fromBlock : (currentBlock > maxRange ? currentBlock - maxRange : 0n);
-    const aggregatedLogs: typeof logs = [] as any;
+    const maxRange = BigInt(100000);
+    const start = fromBlock && fromBlock > BigInt(0) ? fromBlock : (currentBlock > maxRange ? currentBlock - maxRange : BigInt(0));
+    const aggregatedLogs: any[] = [];
     let chunkFrom = start;
     while (chunkFrom <= currentBlock) {
-      const chunkTo = (chunkFrom + maxRange - 1n) < currentBlock ? (chunkFrom + maxRange - 1n) : currentBlock;
+      const chunkTo = (chunkFrom + (maxRange - BigInt(1))) < currentBlock ? (chunkFrom + (maxRange - BigInt(1))) : currentBlock;
       const chunk = await client.getLogs({
         address: marketAddress,
         event: stakeEvent,
@@ -64,9 +64,9 @@ export default function ClaimForm() {
       });
       aggregatedLogs.push(...chunk);
       if (chunkTo === currentBlock) break;
-      chunkFrom = chunkTo + 1n;
+      chunkFrom = chunkTo + BigInt(1);
     }
-    const uniqueIds = Array.from(new Set(aggregatedLogs.map((l) => l.args.id as bigint)));
+    const uniqueIds: bigint[] = Array.from(new Set(aggregatedLogs.map((l: any) => l.args.id as bigint)));
     if (uniqueIds.length === 0) throw new Error("No stakes found for this wallet");
 
     // Filter to ids with current non-zero balance
@@ -77,16 +77,16 @@ export default function ClaimForm() {
           abi: spatialMarketAbi,
           functionName: "balanceOf",
           args: [address, id],
-        })
+        }) as Promise<bigint>
       )
     );
-    const heldIds = uniqueIds.filter((_, i) => (balances[i] as bigint) > 0n);
+    const heldIds: bigint[] = uniqueIds.filter((_, i) => (balances[i] as bigint) > BigInt(0));
     if (heldIds.length === 0) throw new Error("No claimable positions (zero balance)");
 
     if (resolutionApi) {
       // Preferred path: fetch payout info and proof for each id from resolution API
       const resolutionItems = await Promise.all(
-        heldIds.map(async (id) => {
+        heldIds.map(async (id: bigint) => {
           const res = await fetch(`${resolutionApi}/id/${id.toString()}`);
           if (!res.ok) throw new Error(`Resolution API error for id ${id}`);
           const json = await res.json();
@@ -99,7 +99,7 @@ export default function ClaimForm() {
         })
       );
 
-      const winning = resolutionItems.filter((x) => x.payoutNumerator > 0n && x.proof.length > 0);
+      const winning = resolutionItems.filter((x) => x.payoutNumerator > BigInt(0) && x.proof.length > 0);
       if (winning.length === 0) throw new Error("No winnings to claim for this wallet");
 
       setInfo(`Claiming ${winning.length} position(s)`);
@@ -118,7 +118,7 @@ export default function ClaimForm() {
       args: [],
     })) as bigint;
 
-    if (totalStaked <= 0n) throw new Error("Market not resolved or no stakes recorded");
+    if (totalStaked <= BigInt(0)) throw new Error("Market not resolved or no stakes recorded");
     setInfo(`Attempting claim for ${heldIds.length} position(s) with empty proof...`);
 
     const encoded = heldIds.map((id) =>
@@ -167,13 +167,10 @@ export default function ClaimForm() {
         padding: "0.75rem 0.9rem"
       }}>
         <div style={{ fontWeight: 700, marginBottom: 4 }}>Claim winnings</div>
-        <div style={{ color: "var(--gray-60)", fontSize: 14 }}>
-          Provide the token id, payout numerator, and Merkle proof from resolution.
-        </div>
+          This will automatically discover your positions and claim winnings. If no resolution API is configured, it will attempt a claim with an empty Merkle proof and a default numerator.
       </div>
 
         <div style={{ color: "var(--gray-60)", fontSize: 14 }}>
-          This will automatically discover your positions and claim winnings. If no resolution API is configured, it will attempt a claim with an empty Merkle proof and a default numerator.
         </div>
 
       <Transaction

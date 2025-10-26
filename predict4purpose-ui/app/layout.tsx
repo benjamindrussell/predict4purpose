@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Inter, Source_Code_Pro } from "next/font/google";
 import { RootProvider } from "./rootProvider";
+import SiteHeader from "./components/SiteHeader";
 import "./globals.css";
 
 const inter = Inter({
@@ -27,7 +28,10 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={`${inter.variable} ${sourceCodePro.variable}`}>
-        <RootProvider>{children}</RootProvider>
+        <RootProvider>
+          <SiteHeader />
+          <main style={{ padding: "1rem" }}>{children}</main>
+        </RootProvider>
       </body>
     </html>
   );

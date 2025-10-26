@@ -92,16 +92,16 @@ export default function StakeForm({
 
       <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
         <label htmlFor="stakeAmount" style={{ fontWeight: 600 }}>
-          Stake amount (tokens)
+          Stake amount (ETH)
         </label>
         <input
           id="stakeAmount"
           type="number"
           min="0"
-          step="0.0001"
+          step="0.000001"
           value={amount}
           onChange={(e) => onAmountChange(e.target.value)}
-          placeholder="e.g. 100"
+          placeholder="e.g. 0.01"
           style={{
             padding: "0.5rem 0.75rem",
             borderRadius: 8,

@@ -1,6 +1,20 @@
 export const spatialMarketAbi = [
   {
     type: "function",
+    name: "owner",
+    stateMutability: "view",
+    inputs: [],
+    outputs: [{ name: "", type: "address" }],
+  },
+  {
+    type: "function",
+    name: "resolver",
+    stateMutability: "view",
+    inputs: [],
+    outputs: [{ name: "", type: "address" }],
+  },
+  {
+    type: "function",
     name: "stakeAt",
     stateMutability: "payable",
     inputs: [
@@ -8,6 +22,25 @@ export const spatialMarketAbi = [
       { name: "lonE6", type: "int32" },
     ],
     outputs: [{ name: "id", type: "uint256" }],
+  },
+  {
+    type: "function",
+    name: "closeMarket",
+    stateMutability: "nonpayable",
+    inputs: [],
+    outputs: [],
+  },
+  {
+    type: "function",
+    name: "setResolution",
+    stateMutability: "nonpayable",
+    inputs: [
+      { name: "merkleRoot", type: "bytes32" },
+      { name: "_payoutDenominator", type: "uint256" },
+      { name: "latE6", type: "int32" },
+      { name: "lonE6", type: "int32" },
+    ],
+    outputs: [],
   },
   {
     type: "function",

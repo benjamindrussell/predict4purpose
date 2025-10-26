@@ -2,6 +2,9 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Wallet, ConnectWallet } from "@coinbase/onchainkit/wallet";
+import dynamic from "next/dynamic";
+
+const ResolveControl = dynamic(() => import("./ResolveControl"), { ssr: false });
 import { Avatar, Name } from "@coinbase/onchainkit/identity";
 
 export default function SiteHeader() {
@@ -41,12 +44,15 @@ export default function SiteHeader() {
           <Link href="/heatmap" style={tabStyle(isActive("/heatmap"))}>Map</Link>
         </nav>
       </div>
-      <Wallet>
-        <ConnectWallet>
-          <Avatar className="h-6 w-6" />
-          <Name />
-        </ConnectWallet>
-      </Wallet>
+      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+        <ResolveControl />
+        <Wallet>
+          <ConnectWallet>
+            <Avatar className="h-6 w-6" />
+            <Name />
+          </ConnectWallet>
+        </Wallet>
+      </div>
     </header>
   );
 }

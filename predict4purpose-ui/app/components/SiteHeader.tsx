@@ -38,8 +38,7 @@ export default function SiteHeader() {
         </div>
         <nav style={{ display: "flex", gap: 8 }}>
           <Link href="/markets" style={tabStyle(isActive("/markets"))}>Markets</Link>
-          <Link href="/positions" style={tabStyle(isActive("/positions"))}>Positions</Link>
-          <Link href="/heatmap" style={tabStyle(isActive("/heatmap"))}>Heatmap</Link>
+          <Link href="/heatmap" style={tabStyle(isActive("/heatmap"))}>Map</Link>
         </nav>
       </div>
       <Wallet>

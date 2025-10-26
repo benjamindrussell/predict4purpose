@@ -18,7 +18,7 @@ export default function WildfiresClient() {
   return (
     <div style={{ display: "grid", gap: 12 }}>
       <h1 style={{ fontSize: 24, fontWeight: 800 }}>Wildfires</h1>
-      <div style={{ display: "flex", gap: 12, alignItems: "stretch" }}>
+      <div style={{ display: "flex", gap: 12, alignItems: "flex-start" }}>
         <div style={{ flex: 2, border: "1px solid var(--gray-15)", borderRadius: 8, overflow: "hidden", position: "relative", isolation: "isolate" }}>
           <div style={{ height: "60vh" }}>
             <MapPicker value={position} onChange={setPosition} radiusMeters={radiusMeters} />

@@ -1,6 +1,7 @@
 "use client";
 import styles from "./page.module.css";
-import { Wallet } from "@coinbase/onchainkit/wallet";
+import { Wallet, ConnectWallet } from "@coinbase/onchainkit/wallet";
+import { Avatar, Name } from "@coinbase/onchainkit/identity";
 import dynamic from "next/dynamic";
 import { useMemo, useState } from "react";
 
@@ -8,6 +9,9 @@ const MapPicker = dynamic(() => import("./components/MapPicker"), {
   ssr: false,
 });
 const StakeForm = dynamic(() => import("./components/StakeForm"), {
+  ssr: false,
+});
+const ClaimForm = dynamic(() => import("./components/ClaimForm"), {
   ssr: false,
 });
 
@@ -26,7 +30,12 @@ export default function Home() {
     <div className={styles.container}>
       <header className={styles.headerWrapper}>
         <div className={styles.siteTitle}>Predict4Purpose</div>
-        <Wallet />
+        <Wallet>
+          <ConnectWallet>
+            <Avatar className="h-6 w-6" />
+            <Name />
+          </ConnectWallet>
+        </Wallet>
       </header>
 
       <div className={styles.content}>
@@ -40,6 +49,8 @@ export default function Home() {
             radiusMeters={radiusMeters}
             position={position}
           />
+          <div style={{ height: 16 }} />
+          <ClaimForm />
         </div>
       </div>
     </div>

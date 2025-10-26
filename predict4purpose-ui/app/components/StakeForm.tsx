@@ -1,7 +1,17 @@
 "use client";
-import { useMemo, useState } from "react";
-import { createWalletClient, custom, parseEther } from "viem";
-import { base, baseSepolia, hardhat, sepolia } from "viem/chains";
+import { useMemo, useState, useCallback } from "react";
+import { encodeFunctionData, parseEther } from "viem";
+import { baseSepolia } from "viem/chains";
+import {
+  Transaction,
+  TransactionButton,
+  TransactionSponsor,
+  TransactionToast,
+  TransactionToastAction,
+  TransactionToastIcon,
+  TransactionToastLabel,
+  type LifecycleStatus,
+} from "@coinbase/onchainkit/transaction";
 import { spatialMarketAbi } from "../lib/abi/SpatialMarket";
 
 type LatLng = { lat: number; lng: number };
@@ -23,57 +33,51 @@ export default function StakeForm({
   const [error, setError] = useState<string | null>(null);
 
   const marketAddress = process.env.NEXT_PUBLIC_MARKET_ADDRESS as `0x${string}` | undefined;
+  const isSponsored = Boolean(process.env.NEXT_PUBLIC_CDP_PAYMASTER_URL);
+
+  const calls = useCallback(async () => {
+    if (!canSubmit) throw new Error("Missing stake inputs");
+    if (!marketAddress) throw new Error("Missing NEXT_PUBLIC_MARKET_ADDRESS");
+
+    const latE6 = Math.round(position!.lat * 1_000_000);
+    const lonE6 = Math.round(position!.lng * 1_000_000);
+    const valueWei = parseEther(amount);
+
+    const data = encodeFunctionData({
+      abi: spatialMarketAbi,
+      functionName: "stakeAt",
+      args: [latE6, lonE6],
+    });
+
+    return [{ to: marketAddress, data, value: valueWei }];
+  }, [amount, canSubmit, marketAddress, position]);
+
+  const handleOnStatus = useCallback((status: LifecycleStatus) => {
+    if (status.statusName === "error") {
+      const err = (status.statusData as any) ?? {};
+      setError(err?.shortMessage || err?.message || "Transaction failed");
+      setSubmitting(false);
+      return;
+    }
+    if (
+      status.statusName === "buildingTransaction" ||
+      status.statusName === "transactionPending"
+    ) {
+      setError(null);
+      setSubmitting(true);
+      return;
+    }
+    if (
+      status.statusName === "success" ||
+      status.statusName === "transactionLegacyExecuted" ||
+      status.statusName === "transactionIdle"
+    ) {
+      setSubmitting(false);
+    }
+  }, []);
 
   return (
-    <form
-      onSubmit={async (e) => {
-        e.preventDefault();
-        setError(null);
-        if (!canSubmit) return;
-        if (!marketAddress) {
-          setError("Missing NEXT_PUBLIC_MARKET_ADDRESS");
-          return;
-        }
-        try {
-          setSubmitting(true);
-          if (!(window as any).ethereum) throw new Error("Wallet not connected");
-          const walletClient = createWalletClient({ transport: custom((window as any).ethereum) });
-          const [account] = await walletClient.getAddresses();
-          if (!account) throw new Error("No account selected");
-          const chainId = await walletClient.getChainId();
-          const chain =
-            chainId === base.id
-              ? base
-              : chainId === baseSepolia.id
-              ? baseSepolia
-              : chainId === hardhat.id
-              ? hardhat
-              : chainId === sepolia.id
-              ? sepolia
-              : undefined;
-
-          // Convert to microdegrees (int32 bounds enforced on-chain)
-          const latE6 = Math.round(position!.lat * 1_000_000);
-          const lonE6 = Math.round(position!.lng * 1_000_000);
-          const valueWei = parseEther(amount);
-
-          await walletClient.writeContract({
-            address: marketAddress,
-            abi: spatialMarketAbi,
-            functionName: "stakeAt",
-            args: [latE6, lonE6],
-            account,
-            chain,
-            value: valueWei,
-          });
-        } catch (err: any) {
-          setError(err?.shortMessage || err?.message || String(err));
-        } finally {
-          setSubmitting(false);
-        }
-      }}
-      style={{ display: "flex", flexDirection: "column", gap: "1rem" }}
-    >
+    <form onSubmit={(e) => e.preventDefault()} style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
       <div style={{
         border: "1px solid var(--gray-15)",
         background: "var(--gray-10)",
@@ -128,21 +132,20 @@ export default function StakeForm({
         </div>
       </div>
 
-      <button
-        type="submit"
-        disabled={!canSubmit || submitting}
-        style={{
-          background: canSubmit && !submitting ? "var(--blue)" : "var(--gray-50)",
-          color: "white",
-          border: 0,
-          borderRadius: 8,
-          padding: "0.75rem 1rem",
-          cursor: canSubmit && !submitting ? "pointer" : "not-allowed",
-          fontWeight: 600,
-        }}
+      <Transaction
+        chainId={baseSepolia.id}
+        calls={calls}
+        onStatus={handleOnStatus}
+        isSponsored={isSponsored}
       >
-        {submitting ? "Submitting..." : "Stake prediction"}
-      </button>
+        <TransactionButton disabled={!canSubmit || submitting} className="ock-button" />
+        {isSponsored && <TransactionSponsor />}
+        <TransactionToast>
+          <TransactionToastIcon />
+          <TransactionToastLabel />
+          <TransactionToastAction />
+        </TransactionToast>
+      </Transaction>
 
       {error && (
         <div style={{ color: "#b00020", fontSize: 14 }}>{error}</div>

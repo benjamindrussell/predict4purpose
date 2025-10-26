@@ -1,5 +1,8 @@
 "use client";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
+import { createWalletClient, custom, parseEther } from "viem";
+import { base, baseSepolia, hardhat, sepolia } from "viem/chains";
+import { spatialMarketAbi } from "../lib/abi/SpatialMarket";
 
 type LatLng = { lat: number; lng: number };
 
@@ -16,17 +19,58 @@ export default function StakeForm({
 }) {
   const radiusKm = useMemo(() => (radiusMeters / 1000).toFixed(2), [radiusMeters]);
   const canSubmit = position && amount && Number(amount) > 0;
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const marketAddress = process.env.NEXT_PUBLIC_MARKET_ADDRESS as `0x${string}` | undefined;
 
   return (
     <form
-      onSubmit={(e) => {
+      onSubmit={async (e) => {
         e.preventDefault();
+        setError(null);
         if (!canSubmit) return;
-        alert(
-          `Pinned at (lat: ${position!.lat.toFixed(4)}, lng: ${position!.lng.toFixed(
-            4
-          )}) with radius ${radiusKm} km and stake ${amount}`
-        );
+        if (!marketAddress) {
+          setError("Missing NEXT_PUBLIC_MARKET_ADDRESS");
+          return;
+        }
+        try {
+          setSubmitting(true);
+          if (!(window as any).ethereum) throw new Error("Wallet not connected");
+          const walletClient = createWalletClient({ transport: custom((window as any).ethereum) });
+          const [account] = await walletClient.getAddresses();
+          if (!account) throw new Error("No account selected");
+          const chainId = await walletClient.getChainId();
+          const chain =
+            chainId === base.id
+              ? base
+              : chainId === baseSepolia.id
+              ? baseSepolia
+              : chainId === hardhat.id
+              ? hardhat
+              : chainId === sepolia.id
+              ? sepolia
+              : undefined;
+
+          // Convert to microdegrees (int32 bounds enforced on-chain)
+          const latE6 = Math.round(position!.lat * 1_000_000);
+          const lonE6 = Math.round(position!.lng * 1_000_000);
+          const valueWei = parseEther(amount);
+
+          await walletClient.writeContract({
+            address: marketAddress,
+            abi: spatialMarketAbi,
+            functionName: "stakeAt",
+            args: [latE6, lonE6],
+            account,
+            chain,
+            value: valueWei,
+          });
+        } catch (err: any) {
+          setError(err?.shortMessage || err?.message || String(err));
+        } finally {
+          setSubmitting(false);
+        }
       }}
       style={{ display: "flex", flexDirection: "column", gap: "1rem" }}
     >
@@ -86,19 +130,23 @@ export default function StakeForm({
 
       <button
         type="submit"
-        disabled={!canSubmit}
+        disabled={!canSubmit || submitting}
         style={{
-          background: canSubmit ? "var(--blue)" : "var(--gray-50)",
+          background: canSubmit && !submitting ? "var(--blue)" : "var(--gray-50)",
           color: "white",
           border: 0,
           borderRadius: 8,
           padding: "0.75rem 1rem",
-          cursor: canSubmit ? "pointer" : "not-allowed",
+          cursor: canSubmit && !submitting ? "pointer" : "not-allowed",
           fontWeight: 600,
         }}
       >
-        Stake prediction
+        {submitting ? "Submitting..." : "Stake prediction"}
       </button>
+
+      {error && (
+        <div style={{ color: "#b00020", fontSize: 14 }}>{error}</div>
+      )}
     </form>
   );
 }

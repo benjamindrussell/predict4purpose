@@ -36,8 +36,8 @@ contract SpatialMarket is ReentrancyGuard {
   }
 
   function setApprovalForAll(address operator, bool approved) external {
-    _operatorApprovals[msg.sender][operator] = approved;
-    emit ApprovalForAll(msg.sender, operator, approved);
+    operator; approved; // non-transferable shares
+    revert NonTransferable();
   }
 
   function isApprovedForAll(address account, address operator) public view returns (bool) {
@@ -45,14 +45,13 @@ contract SpatialMarket is ReentrancyGuard {
   }
 
   function safeTransferFrom(address from, address to, uint256 id, uint256 value, bytes calldata data) external {
-    require(from == msg.sender || isApprovedForAll(from, msg.sender), "NOT_AUTH");
-    _safeTransferFrom(from, to, id, value, data);
+    from; to; id; value; data; // non-transferable shares
+    revert NonTransferable();
   }
 
   function safeBatchTransferFrom(address from, address to, uint256[] calldata ids, uint256[] calldata values, bytes calldata data) external {
-    require(from == msg.sender || isApprovedForAll(from, msg.sender), "NOT_AUTH");
-    require(ids.length == values.length, "LEN");
-    _safeBatchTransferFrom(from, to, ids, values, data);
+    from; to; ids; values; data; // non-transferable shares
+    revert NonTransferable();
   }
 
   function _safeTransferFrom(address from, address to, uint256 id, uint256 value, bytes calldata data) internal {
@@ -119,6 +118,7 @@ contract SpatialMarket is ReentrancyGuard {
   address public immutable resolver;
   address public immutable treasury;
   uint256 public immutable feeBps; // protocol fee on claims, out of 10_000
+  uint256 public constant WIN_RADIUS_METERS = 5_000; // fixed 5km radius
 
   uint256 public tradingOpen;
   uint256 public tradingClose;
@@ -137,10 +137,12 @@ contract SpatialMarket is ReentrancyGuard {
   bytes32 public resultMerkleRoot;
   uint256 public payoutDenominator; // common denominator for all ids
   uint256 public resolvedAt; // timestamp when last root set
+  int32 public resolvedLatE6; // final resolution latitude (microdegrees)
+  int32 public resolvedLonE6; // final resolution longitude (microdegrees)
 
   // ---------- Events ----------
   event Stake(address indexed staker, uint256 indexed id, int32 latE6, int32 lonE6, uint256 amount);
-  event Resolve(bytes32 merkleRoot, uint256 payoutDenominator);
+  event Resolve(bytes32 merkleRoot, uint256 payoutDenominator, int32 latE6, int32 lonE6);
 
   // ---------- Errors ----------
   error NotOwner();
@@ -149,6 +151,7 @@ contract SpatialMarket is ReentrancyGuard {
   error TradingClosed();
   error TradingNotOpen();
   error ClaimsLocked();
+  error NonTransferable();
 
   constructor(
     address _owner,
@@ -199,18 +202,22 @@ contract SpatialMarket is ReentrancyGuard {
   }
 
   // ---------- Resolution ----------
-  function setResolution(bytes32 merkleRoot, uint256 _payoutDenominator) external {
+  function setResolution(bytes32 merkleRoot, uint256 _payoutDenominator, int32 latE6, int32 lonE6) external {
     if (msg.sender != resolver) revert NotResolver();
     require(tradingClose != 0 && block.timestamp >= tradingClose, "NOT_CLOSED");
     require(_payoutDenominator > 0, "DEN");
+    // basic bounds checks for coordinates
+    require(latE6 >= -90_000_000 && latE6 <= 90_000_000, "LAT");
+    require(lonE6 >= -180_000_000 && lonE6 <= 180_000_000, "LON");
     resultMerkleRoot = merkleRoot;
     payoutDenominator = _payoutDenominator;
     resolvedAt = block.timestamp;
-    emit Resolve(merkleRoot, _payoutDenominator);
+    resolvedLatE6 = latE6;
+    resolvedLonE6 = lonE6;
+    emit Resolve(merkleRoot, _payoutDenominator, latE6, lonE6);
   }
 
   function claim(uint256 id, uint256 payoutNumerator, bytes32[] calldata proof) public nonReentrant returns (uint256 payoutWei) {
-    require(disputeEnd != 0 && block.timestamp >= disputeEnd, "DISPUTE");
     bytes32 root = resultMerkleRoot;
     require(root != bytes32(0) && payoutDenominator > 0, "NO_RES");
 
@@ -242,7 +249,7 @@ contract SpatialMarket is ReentrancyGuard {
   function skim(address to) external {
     if (msg.sender != owner) revert NotOwner();
     // Skim any unallocated ETH (e.g., rounding dust) after dispute.
-    require(disputeEnd != 0 && block.timestamp >= disputeEnd, "DISPUTE");
+    require(resultMerkleRoot != bytes32(0) && payoutDenominator > 0, "NO_RES");
     uint256 bal = address(this).balance;
     if (bal > 0) SafeTransferLib.safeTransferETH(to, bal);
   }
@@ -252,7 +259,7 @@ contract SpatialMarket is ReentrancyGuard {
     if (msg.sender != resolver) revert NotResolver();
     require(tradingClose == 0, "ALREADY_CLOSED");
     tradingClose = block.timestamp;
-    disputeEnd = tradingClose + 7 days;
+    disputeEnd = 0; // dispute window removed for hackathon
   }
 
   // ---------- Cell math ----------

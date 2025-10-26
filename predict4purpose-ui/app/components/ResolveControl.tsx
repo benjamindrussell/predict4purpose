@@ -15,7 +15,7 @@ import {
 } from "@coinbase/onchainkit/transaction";
 import { spatialMarketAbi } from "../lib/abi/SpatialMarket";
 
-export default function ResolveControl() {
+export default function ResolveControl({ buttonStyle, buttonClassName }: { buttonStyle?: React.CSSProperties; buttonClassName?: string }) {
   const { address } = useAccount();
   const [ownerAddress, setOwnerAddress] = useState<`0x${string}` | null>(null);
   const [resolverAddress, setResolverAddress] = useState<`0x${string}` | null>(null);
@@ -146,14 +146,14 @@ export default function ResolveControl() {
       <button
         type="button"
         onClick={() => setOpen(true)}
-        style={{
+        className={buttonClassName}
+        style={buttonStyle ?? {
           padding: "0.45rem 0.9rem",
           borderRadius: 999,
           border: "1px solid var(--blue)",
-          background: "linear-gradient(90deg, #432dd7 0%, #7a5cff 100%)",
-          color: "white",
+          background: "rgba(67,45,215,0.08)",
+          color: "var(--blue)",
           fontWeight: 700,
-          boxShadow: "0 4px 10px rgba(67,45,215,0.3)",
         }}
       >
         Resolve

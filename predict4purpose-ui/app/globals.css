@@ -64,3 +64,54 @@
 
   /* Keep color scheme light */
 }
+
+/* Shared buttons */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  user-select: none;
+  transition: background 120ms ease, border-color 120ms ease, color 120ms ease, box-shadow 120ms ease;
+}
+
+.btn-primary {
+  padding: 0.4rem 0.75rem;
+  border-radius: 6px;
+  border: 1px solid var(--blue);
+  background: rgba(67,45,215,0.08);
+  color: var(--blue);
+  font-weight: 700;
+}
+.btn-primary:hover {
+  background: rgba(67,45,215,0.14);
+}
+.btn-primary:active {
+  background: rgba(67,45,215,0.22);
+}
+
+.btn-secondary {
+  padding: 0.35rem 0.7rem;
+  border-radius: 6px;
+  border: 1px solid var(--gray-20);
+  background: var(--gray-10);
+  color: var(--gray-80);
+  font-weight: 600;
+}
+.btn-secondary:hover {
+  background: #e7e9ee;
+}
+.btn-secondary:active {
+  background: #dde1e8;
+}
+
+/* Ensure OnchainKit modals overlay Leaflet maps without blocking interaction */
+[data-slot="dialog-overlay"] {
+  z-index: 9999 !important; /* dim layer below modal content */
+}
+[data-testid="ockModalOverlay"] {
+  z-index: 10000 !important; /* modal content above overlay */
+}
+[data-slot="dialog-content"] {
+  z-index: 10001 !important; /* root modal container above overlay */
+}

@@ -1,6 +1,7 @@
 "use client";
 import { useMemo, useState } from "react";
 import { createWalletClient, custom, parseEther } from "viem";
+import { base, baseSepolia, hardhat, sepolia } from "viem/chains";
 import { spatialMarketAbi } from "../lib/abi/SpatialMarket";
 
 type LatLng = { lat: number; lng: number };
@@ -39,6 +40,17 @@ export default function StakeForm({
           const walletClient = createWalletClient({ transport: custom((window as any).ethereum) });
           const [account] = await walletClient.getAddresses();
           if (!account) throw new Error("No account selected");
+          const chainId = await walletClient.getChainId();
+          const chain =
+            chainId === base.id
+              ? base
+              : chainId === baseSepolia.id
+              ? baseSepolia
+              : chainId === hardhat.id
+              ? hardhat
+              : chainId === sepolia.id
+              ? sepolia
+              : undefined;
 
           // Convert to microdegrees (int32 bounds enforced on-chain)
           const latE6 = Math.round(position!.lat * 1_000_000);
@@ -51,7 +63,7 @@ export default function StakeForm({
             functionName: "stakeAt",
             args: [latE6, lonE6],
             account,
-            chain: undefined,
+            chain,
             value: valueWei,
           });
         } catch (err: any) {

@@ -225,20 +225,9 @@ export default function MarketsPage() {
         ]);
         if (cancelled) return;
         setWildfireStaked(formatEth(total));
-        const now = Math.floor(Date.now() / 1000);
-        const close = Number(closeTs);
-        if (Number.isFinite(close)) {
-          if (now < close) {
-            const remaining = close - now;
-            const days = Math.floor(remaining / 86400);
-            const hours = Math.floor((remaining % 86400) / 3600);
-            setWildfireEndsIn(`${days}d ${hours}h`);
-            setWildfireStatus("Open");
-          } else {
-            setWildfireEndsIn("Closed");
-            setWildfireStatus("Closed");
-          }
-        }
+        const closed = closeTs && closeTs > BigInt(0);
+        setWildfireEndsIn("7d 0h");
+        setWildfireStatus(closed ? "Closed" : "Open");
       } catch (e) {
         // Swallow errors for the card; keep page resilient
       }

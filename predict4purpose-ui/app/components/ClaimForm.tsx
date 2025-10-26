@@ -15,7 +15,7 @@ import {
 } from "@coinbase/onchainkit/transaction";
 import { spatialMarketAbi } from "../lib/abi/SpatialMarket";
 
-export default function ClaimForm() {
+export default function ClaimForm({ disabled }: { disabled?: boolean } = {}) {
   const { address } = useAccount();
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -179,7 +179,7 @@ export default function ClaimForm() {
         onStatus={handleOnStatus}
         isSponsored={isSponsored}
       >
-        <TransactionButton disabled={!canSubmit || submitting} className="ock-button" />
+        <TransactionButton disabled={disabled || !canSubmit || submitting} className="ock-button" />
         {isSponsored && <TransactionSponsor />}
         <TransactionToast>
           <TransactionToastIcon />

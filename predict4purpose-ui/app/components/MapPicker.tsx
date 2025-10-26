@@ -94,7 +94,7 @@ export default function MapPicker({
           <Circle
             center={[value.lat, value.lng]}
             radius={radiusMeters}
-            pathOptions={{ color: "var(--blue)", fillColor: "var(--cerulean)", fillOpacity: 0.15 }}
+            pathOptions={{ color: "var(--red)", fillColor: "var(--pink)", fillOpacity: 0.15 }}
           />
           <Marker position={[value.lat, value.lng]} icon={explicitIcon} />
         </>

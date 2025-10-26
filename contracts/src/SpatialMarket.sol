@@ -36,8 +36,8 @@ contract SpatialMarket is ReentrancyGuard {
   }
 
   function setApprovalForAll(address operator, bool approved) external {
-    _operatorApprovals[msg.sender][operator] = approved;
-    emit ApprovalForAll(msg.sender, operator, approved);
+    operator; approved; // non-transferable shares
+    revert NonTransferable();
   }
 
   function isApprovedForAll(address account, address operator) public view returns (bool) {
@@ -45,14 +45,13 @@ contract SpatialMarket is ReentrancyGuard {
   }
 
   function safeTransferFrom(address from, address to, uint256 id, uint256 value, bytes calldata data) external {
-    require(from == msg.sender || isApprovedForAll(from, msg.sender), "NOT_AUTH");
-    _safeTransferFrom(from, to, id, value, data);
+    from; to; id; value; data; // non-transferable shares
+    revert NonTransferable();
   }
 
   function safeBatchTransferFrom(address from, address to, uint256[] calldata ids, uint256[] calldata values, bytes calldata data) external {
-    require(from == msg.sender || isApprovedForAll(from, msg.sender), "NOT_AUTH");
-    require(ids.length == values.length, "LEN");
-    _safeBatchTransferFrom(from, to, ids, values, data);
+    from; to; ids; values; data; // non-transferable shares
+    revert NonTransferable();
   }
 
   function _safeTransferFrom(address from, address to, uint256 id, uint256 value, bytes calldata data) internal {
@@ -152,6 +151,7 @@ contract SpatialMarket is ReentrancyGuard {
   error TradingClosed();
   error TradingNotOpen();
   error ClaimsLocked();
+  error NonTransferable();
 
   constructor(
     address _owner,
